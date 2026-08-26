@@ -8,6 +8,7 @@ import pandas as pd
 import yfinance as yf
 import time
 import os
+import sys
 import re
 from IPython.display import clear_output
 
@@ -63,12 +64,16 @@ def myfunc()->None:
     
     # 3. Construct the export URL
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
-
+    
     # 4. Load into DataFrame
     df = pd.read_csv(url)
     
-    # Cast numeric columns from str to float type
-    cols = ['Open Price', 'Close Price', 'Commission']
+    # 5. Keep open trades only
+    df = df[df.Closed=='No'].copy()
+    
+    # Fill numberic columns' NA with 0 and cast numeric columns from str to float type
+    cols = ['Open Price', 'Close Price', 'Commission','Risk ($)', 'Balance at Open', 'PnL']
+    df[cols] = df[cols].fillna('0')
     for c in cols:
         df[c] = df[c].apply(lambda x: float(re.sub(r"\(", "-", re.sub(r"[,\)]", "", x))))
     df.head()
@@ -116,8 +121,11 @@ def myfunc()->None:
     
     # In[7]:
     
-    out = df.groupby(['Symbol','Account']).agg({'PnL': sum})
-    os.system('cls')
+    out = df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum})
+    if sys.platform == "win32":
+        os.system('cls')
+    else:
+        os.system('clear')
     print(out)
 
 while True:
