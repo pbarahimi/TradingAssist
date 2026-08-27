@@ -20,6 +20,8 @@ from IPython.display import clear_output
 yfinance_sym_dic = { 
     'MNQ': {'SYM':'MNQ=F', 'ADJ': 0},
     'NQ': {'SYM':'NQ=F', 'ADJ': 0},
+    'MES': {'SYM':'MES=F', 'ADJ': 0},
+    'ES': {'SYM':'ES=F', 'ADJ': 0},
     'US100': {'SYM':'MNQ=F', 'ADJ': -53.18},
     'GC': {'SYM':'GC=F', 'ADJ': 0},
     'MGX': {'SYM':'MGC=F', 'ADJ': 0},
@@ -121,12 +123,18 @@ def myfunc()->None:
     
     # In[7]:
     
-    out = df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum})
     if sys.platform == "win32":
         os.system('cls')
     else:
         os.system('clear')
-    print(out)
+        
+    print(df.groupby('Account').agg({'PnL': sum}))
+    print('\n', 50 * '-', '\n')
+    print(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}))
+    print('\n', 50 * '-', '\n')
+    print(df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum}))
+    print('\n', 50 * '-', '\n')
+    print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
 
 while True:
     myfunc()
