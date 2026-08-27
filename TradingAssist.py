@@ -10,8 +10,34 @@ import time
 import os
 import sys
 import re
+import sys
 from IPython.display import clear_output
+import warnings
+import argparse
 
+    
+# # Load Arguments
+
+GENERATE_MARKDOWNS = False
+MARKDOWN_PATH = '../TradingAssistWebapp/pages/'
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Markdown utility options")
+
+    parser.add_argument(
+        "-m", "--Markdown",
+        type=int,
+        help="Set to 1 to print 'Markdown'"
+    )
+
+    parser.add_argument(
+        "-mp", "--Markdown_path",
+        type=str,
+        help="Path to save a markdown file"
+    )
+
+    args = parser.parse_args()
+    return args
 
 # In[2]:
 
@@ -55,7 +81,6 @@ def myfunc()->None:
     # # Read the trades worksheet
 
     # In[3]:
-    
     
     # 1. Replace with your actual Google Sheet ID
     # (Found in the URL: https://docs.google.com/spreadsheets/d/SHEET_ID/edit)
@@ -135,7 +160,41 @@ def myfunc()->None:
     print(df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum}))
     print('\n', 50 * '-', '\n')
     print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
+    
+    # # Generate Markdowns
+    if GENERATE_MARKDOWNS:
+        page_nm = 'acct_lvl_stats.md'
+        with open(os.path.join(MARKDOWN_PATH, page_nm), 'w') as f:  # Save to a file
+            f.write(df.groupby('Account').agg({'PnL': sum}).to_markdown())
+            
+        page_nm = 'sym_lvl_stats.md'
+        with open(os.path.join(MARKDOWN_PATH, page_nm), 'w') as f:
+            f.write(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}).to_markdown())
+        
+        page_nm = 'sym_acct_lvl_stats.md'
+        with open(os.path.join(MARKDOWN_PATH, page_nm), 'w') as f:
+            f.write(df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum}).to_markdown())
+        
+        page_nm = 'acct_sym_lvl_stats.md'
+        with open(os.path.join(MARKDOWN_PATH, page_nm), 'w') as f:
+            f.write(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}).to_markdown())
+        
+    return None
+            
+if __name__ == "__main__":
+    args = parse_args()
 
-while True:
-    myfunc()
-    time.sleep(2)
+    # Handle Markdown flag
+    if args.Markdown == 1:
+        GENERATE_MARKDOWNS = True
+
+    # Handle Markdown_path flag and print the new path if any
+    if args.Markdown_path:
+        MARKDOWN_PATH = args.Markdown_path
+
+    if GENERATE_MARKDOWNS:
+        print(f"Markdowns will be saved to:", MARKDOWN_PATH)
+
+    while True:
+        myfunc()
+        time.sleep(2)
