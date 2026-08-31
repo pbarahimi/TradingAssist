@@ -14,6 +14,7 @@ import sys
 from IPython.display import clear_output
 import warnings
 import argparse
+from datetime import datetime
 
     
 # # Load Arguments
@@ -196,5 +197,8 @@ if __name__ == "__main__":
         print(f"Markdowns will be saved to:", MARKDOWN_PATH)
 
     while True:
-        myfunc()
+        try:
+            myfunc()
+        except Exception:
+            print(f'Error - {datetime.now().strftime("%m/%d/%Y %H:%M:%S")}.')
         time.sleep(2)
