@@ -14,8 +14,8 @@ import argparse
     
 # # Load Arguments
 
-GENERATE_MARKDOWN = True
-GENERATE_HTML = True
+GENERATE_MARKDOWN = False
+GENERATE_HTML = False
 REPORT_PATH = '../TradingAssistWebapp/pages/'
 GSHEET_CREDS = "c:/users/pbara/Documents/Python/secrets/sheets-pandas-reader-193e91a08e8e.json"
 
