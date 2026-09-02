@@ -245,7 +245,7 @@ if __name__ == "__main__":
 
     # Handle Markdown flag
     if args.Markdown == 1:
-        GENERATE_MARKDOWNS = True
+        GENERATE_MARKDOWN = True
 
     # Handle HTML flag
     if args.HTML == 1:
@@ -255,7 +255,7 @@ if __name__ == "__main__":
     if args.Report_path:
         REPORT_PATH = args.Markdown_path
 
-    if GENERATE_MARKDOWNS:
+    if GENERATE_MARKDOWN:
         print(f"Markdowns will be saved to:", REPORT_PATH)
 
     if GENERATE_HTML:
