@@ -93,18 +93,18 @@ def myfunc()->None:
     SHEET_NAME = "Trades"
 
     # Option 1: Simple way to read a shared google sheet with the view as is
-    '''
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
     # Load into DataFrame
     df = pd.read_csv(url)
-    '''
     
     # Option 2: Requires google account service credentials to read the full sheet regardless of the filters applied in the browser
+    '''
     gc = gspread.service_account(filename=GSHEET_CREDS)
     sh = gc.open_by_key(SHEET_ID)
     worksheet = sh.worksheet(SHEET_NAME)
     df = pd.DataFrame(worksheet.get_all_records())
-
+    '''
+    
     # Keep open trades only
     df = df[df.Closed=='No'].copy()
     
@@ -120,18 +120,17 @@ def myfunc()->None:
     SHEET_NAME = 'Symbols'
 
     # Pick an options:
-    '''
-    OPTION 1: Read 'Symbols directly from shared url
+    # OPTION 1: Read 'Symbols directly from shared url
     url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
     point_val_df = pd.read_csv(url, header=None, names=['Symbol', 'Point Value'])
-    '''
 
     # OPTION 2: Read 'Symbols' sheet using using Google authentication - gspread
+    '''
     point_val_df = pd.DataFrame(sh.worksheet(SHEET_NAME).get_all_records(head=0))
     all_values = sh.worksheet(SHEET_NAME).get_all_values()
     point_val_df = pd.DataFrame(all_values, columns=['Symbol', 'Point Value'])
     point_val_df['Point Value'] = point_val_df['Point Value'].astype(float)
-    
+    '''
     
     # # Get Prices
     price_df = pd.DataFrame(df['Symbol']).drop_duplicates()
@@ -152,14 +151,15 @@ def myfunc()->None:
         os.system('cls')
     else:
         os.system('clear')
-        
+    
+    print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
+    print('\n', 50 * '-', '\n')    
     print(df.groupby('Account').agg({'PnL': sum}))
-    print('\n', 50 * '-', '\n')
-    print(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}))
     print('\n', 50 * '-', '\n')
     print(df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum}))
     print('\n', 50 * '-', '\n')
-    print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
+    print(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}))
+    
     
     # # Generate Markdowns
     if GENERATE_MARKDOWN:
@@ -182,62 +182,26 @@ def myfunc()->None:
 
     # # Generate HTML tables
     if GENERATE_HTML:
-        # Create HTML with DataTables library (sortable, searchable, paginated)
-        html_content = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <title>DataFrame Table</title>
-            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-            <style>
-                body {{
-                    padding: 20px;
-                    background-color: #f8f9fa;
-                }}
-                .container {{
-                    max-width: 900px;
-                    background-color: white;
-                    padding: 30px;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-                }}
-                h1 {{
-                    margin-bottom: 30px;
-                    color: #333;
-                }}
-                table {{
-                    font-size: 14px;
-                }}
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>Data Report</h1>
-                #DataFrameHtml
-            </div>
-        </body>
-        </html>
-        """
         page_nm = 'acct_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:  # Save to a file
             t = df.groupby('Account').agg({'PnL': sum})
-            f.write(html_content.replace('#DataFrameHtml', t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover')))
+            f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
             
         page_nm = 'sym_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum})
-            f.write(html_content.replace('#DataFrameHtml', t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover')))
+            f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
         
         page_nm = 'sym_acct_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum})
-            f.write(html_content.replace('#DataFrameHtml', t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover')))
+            f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
         
         page_nm = 'acct_sym_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum})
-            f.write(html_content.replace('#DataFrameHtml', t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover')))
+            f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
+    
     return None
             
 if __name__ == "__main__":
