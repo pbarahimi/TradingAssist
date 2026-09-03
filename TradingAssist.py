@@ -226,5 +226,8 @@ if __name__ == "__main__":
         print(f"HTML files will be saved to:", REPORT_PATH)
 
     while True:
-        myfunc()
+        try:
+            myfunc()
+        except Exception as e:
+            print(f'An error occured: {e}')
         time.sleep(2)
