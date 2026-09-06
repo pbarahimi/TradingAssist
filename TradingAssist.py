@@ -13,7 +13,7 @@ from GSheetImporter import GSheetImporter
 from pullprice import yfinance_sym_dic, get_live_price
     
 # # Load Arguments
-
+PRINT = True
 GENERATE_MARKDOWN = False
 GENERATE_HTML = False
 REPORT_PATH = '../TradingAssistWebapp/pages/'
@@ -35,6 +35,12 @@ def parse_args():
         help="Set to 1 to print 'HTML'"
     )
     
+    parser.add_argument(
+        "-P", "--Print",
+        type=int,
+        help="Set to 0 to switch off print to stdout"
+    )
+
     parser.add_argument(
         "-r", "--Report_path",
         type=str,
@@ -67,13 +73,11 @@ def myfunc()->None:
     # # Get Point Values
     # Specify the tab name (optional, defaults to the first sheet)
     SHEET_NAME = 'Symbols'
-    gsheet = GSheetImporter(SHEET_ID, SHEET_NAME, GSHEET_CREDS)
-    all_values = gsheet.get_all_values()
-    point_val_df = pd.DataFrame(all_values, columns=['Symbol', 'Point Value'])
-    point_val_df['Point Value'] = point_val_df['Point Value'].astype(float)
+    
+    # Pulling directly from shared url to avoid using google service account quota
+    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+    point_val_df = pd.read_csv(url, header=None, names=['Symbol', 'Point Value'])
 
-    point_val_df.head()
-        
     # # Get Prices
     price_df = pd.DataFrame(df['Symbol']).drop_duplicates()
     price_df['Current Price'] = price_df.Symbol.apply(lambda x : get_live_price(x, yfinance_sym_dic))    
@@ -85,20 +89,20 @@ def myfunc()->None:
     df['PnL'] = (df['Volume'] * (df['Current Price']-df['Open Price']) * df['Point Value']).round(2)
     df
     
+    if PRINT:
+        # # Group by account and symbol to report
+        if sys.platform == "win32":
+            os.system('cls')
+        else:
+            os.system('clear')
     
-    # # Group by account and symbol to report
-    if sys.platform == "win32":
-        os.system('cls')
-    else:
-        os.system('clear')
-    
-    print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
-    print('\n', 50 * '-', '\n')    
-    print(df.groupby('Account').agg({'PnL': sum}))
-    print('\n', 50 * '-', '\n')
-    print(df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum}))
-    print('\n', 50 * '-', '\n')
-    print(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}))
+        print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
+        print('\n', 50 * '-', '\n')    
+        print(df.groupby('Account').agg({'PnL': sum}))
+        print('\n', 50 * '-', '\n')
+        print(df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum}))
+        print('\n', 50 * '-', '\n')
+        print(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}))
     
     
     # # Generate Markdowns
@@ -154,6 +158,10 @@ if __name__ == "__main__":
     # Handle HTML flag
     if args.HTML == 1:
         GENERATE_HTML = True
+
+    # Handle print to stdout flag
+    if args.Print == 0:
+        PRINT = False
 
     # Handle Markdown_path flag and print the new path if any
     if args.Report_path:
