@@ -8,9 +8,10 @@ import sys
 import argparse
 from IPython.display import clear_output
 import re
+from urllib.parse import quote
 
 sys.path.append('./src')
-from GSheetImporter import GSheetImporter
+# from GSheetImporter import GSheetImporter
 from pullprice import yfinance_sym_dic, get_live_price
 
 # # Load Arguments
@@ -57,10 +58,12 @@ def myfunc()->None:
     # Replace with your actual Google Sheet ID
     # (Found in the URL: https://docs.google.com/spreadsheets/d/SHEET_ID/edit)
     SHEET_ID = "1HJ9h7UEtUQCXNA58UkZyPsHogJWBAcB1lNWt9nOPMR4"
-    
+
     # Specify the tab name (optional, defaults to the first sheet)
     SHEET_NAME = "TradesCopy"
-    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
+    sql_query = "SELECT * WHERE P=0" # Query to only pull open trades
+    encoded_query = quote(sql_query)
+    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}&tq={encoded_query}"
     num_cols = ['Open Price', 'Close Price', 'Commission','Risk ($)', 'Balance at Open', 'PnL']
 
     # Load into DataFrame read directly from the url
@@ -74,7 +77,7 @@ def myfunc()->None:
 
     # Keep open trades
     #df = gsheet.df[gsheet.df['Is Closed']==0].copy()
-    df = df[df['Is Closed']==0].copy()
+    #df = df[df['Is Closed']==0].copy()
 
     # # Get Point Values
     # Specify the tab name (optional, defaults to the first sheet)
