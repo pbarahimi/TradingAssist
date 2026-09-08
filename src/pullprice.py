@@ -13,6 +13,7 @@ yfinance_sym_dic = {
     'AGXUSD': {'SYM':'SI=F', 'ADJ': 0},
     'BZ': {'SYM':'BZ=F', 'ADJ': 0}, # Brent Crude Futures
     'CL': {'SYM':'CL=F', 'ADJ': 0}, # WTI Crude Futures
+    'MCL': {'SYM':'MCL=F', 'ADJ': 0}, # WTI Micro Crude Futures
     'UKOIL': {'SYM':'BZ=F', 'ADJ': 0}, # Brent Crude Futures
     'ADA': {'SYM':'ADA-USD', 'ADJ': 0},
     'BTC': {'SYM':'BTC-USD', 'ADJ': 0},

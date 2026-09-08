@@ -7,18 +7,19 @@ import os
 import sys
 import argparse
 from IPython.display import clear_output
+import re
 
 sys.path.append('./src')
 from GSheetImporter import GSheetImporter
 from pullprice import yfinance_sym_dic, get_live_price
-    
+
 # # Load Arguments
 PRINT = True
 GENERATE_MARKDOWN = False
 GENERATE_HTML = False
 REPORT_PATH = '../TradingAssistWebapp/pages/'
 # GSHEET_CREDS = "c:/users/pbara/Documents/Python/secrets/sheets-pandas-reader-193e91a08e8e.json"
-GSHEET_CREDS = '/home/pbarahimi/.credentials/gsheets.json'
+# GSHEET_CREDS = '/home/pbarahimi/.credentials/gsheets.json'
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Reporting options")
@@ -34,7 +35,7 @@ def parse_args():
         type=int,
         help="Set to 1 to print 'HTML'"
     )
-    
+
     parser.add_argument(
         "-P", "--Print",
         type=int,
@@ -52,23 +53,28 @@ def parse_args():
 
 def myfunc()->None:
     # # Read the trades worksheet
-    
+
     # Replace with your actual Google Sheet ID
     # (Found in the URL: https://docs.google.com/spreadsheets/d/SHEET_ID/edit)
     SHEET_ID = "1HJ9h7UEtUQCXNA58UkZyPsHogJWBAcB1lNWt9nOPMR4"
     
     # Specify the tab name (optional, defaults to the first sheet)
-    SHEET_NAME = "Trades"
-
+    SHEET_NAME = "TradesCopy"
+    url = f"https://docs.google.com/spreadsheets/d/{SHEET_ID}/gviz/tq?tqx=out:csv&sheet={SHEET_NAME}"
     num_cols = ['Open Price', 'Close Price', 'Commission','Risk ($)', 'Balance at Open', 'PnL']
 
-    gsheet = GSheetImporter(sheet_id=SHEET_ID, sheet_name=SHEET_NAME, credentials_path=GSHEET_CREDS)
-    gsheet.get_dataframe()
-    gsheet.to_num(num_cols)
+    # Load into DataFrame read directly from the url
+    df = pd.read_csv(url)
+    df[num_cols] = df[num_cols].fillna('0')
+    for c in num_cols:
+        df[c] = df[c].apply(lambda x: float(re.sub(r"\(", "-", re.sub(r"[,\)]", "", str(x))))) # Replace '(' with '-' and remove ')', ',' from the numbers to cast them to float
+    # gsheet = GSheetImporter(sheet_id=SHEET_ID, sheet_name=SHEET_NAME, credentials_path=GSHEET_CREDS)
+    # gsheet.get_dataframe()
+    # gsheet.to_num(num_cols)
 
     # Keep open trades
-    df = gsheet.df[gsheet.df['Is Closed']==0].copy()
-
+    #df = gsheet.df[gsheet.df['Is Closed']==0].copy()
+    df = df[df['Is Closed']==0].copy()
 
     # # Get Point Values
     # Specify the tab name (optional, defaults to the first sheet)
@@ -80,45 +86,43 @@ def myfunc()->None:
 
     # # Get Prices
     price_df = pd.DataFrame(df['Symbol']).drop_duplicates()
-    price_df['Current Price'] = price_df.Symbol.apply(lambda x : get_live_price(x, yfinance_sym_dic))    
-    
+    price_df['Current Price'] = price_df.Symbol.apply(lambda x : get_live_price(x, yfinance_sym_dic))
+
     # # Append Price to trades DF    
     df = pd.merge(df, price_df, on='Symbol', how='left')
     df = pd.merge(df, point_val_df, on='Symbol', how='left')
     df['Point Value'] = df['Point Value'].fillna(1)
     df['PnL'] = (df['Volume'] * (df['Current Price']-df['Open Price']) * df['Point Value']).round(2)
-    df
-    
+
     if PRINT:
         # # Group by account and symbol to report
         if sys.platform == "win32":
             os.system('cls')
         else:
             os.system('clear')
-    
+
         print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
-        print('\n', 50 * '-', '\n')    
+        print('\n', 50 * '-', '\n')
         print(df.groupby('Account').agg({'PnL': sum}))
         print('\n', 50 * '-', '\n')
         print(df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum}))
         print('\n', 50 * '-', '\n')
         print(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}))
-    
-    
+
     # # Generate Markdowns
     if GENERATE_MARKDOWN:
         page_nm = 'acct_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:  # Save to a file
             f.write(df.groupby('Account').agg({'PnL': sum}).to_markdown())
-            
+
         page_nm = 'sym_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             f.write(df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum}).to_markdown())
-        
+
         page_nm = 'sym_acct_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             f.write(df.groupby(['Symbol','Account'], as_index=False).agg({'Volume': sum, 'PnL': sum}).to_markdown())
-        
+
         page_nm = 'acct_sym_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             f.write(df.groupby(['Account','Symbol'], as_index=False).agg({'Volume': sum, 'PnL': sum}).to_markdown())
@@ -130,24 +134,24 @@ def myfunc()->None:
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:  # Save to a file
             t = df.groupby('Account').agg({'PnL': sum})
             f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
-            
+ 
         page_nm = 'sym_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby('Symbol').agg({'Volume': sum, 'PnL': sum})
             f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
-        
+
         page_nm = 'sym_acct_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum})
             f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
-        
+
         page_nm = 'acct_sym_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum})
             f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
-    
+
     return None
-            
+
 if __name__ == "__main__":
     args = parse_args()
 
@@ -163,7 +167,7 @@ if __name__ == "__main__":
     if args.Print == 0:
         PRINT = False
 
-    # Handle Markdown_path flag and print the new path if any
+    # Handle Report_path argument - update reports location
     if args.Report_path:
         REPORT_PATH = args.Markdown_path
 
@@ -178,4 +182,4 @@ if __name__ == "__main__":
             myfunc()
         except Exception as e:
             print(f'An error occured: {e}')
-        time.sleep(2)
+        time.sleep(1)
