@@ -114,6 +114,7 @@ def myfunc()->None:
 
     # # Generate Markdowns
     if GENERATE_MARKDOWN:
+        '''
         page_nm = 'acct_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:  # Save to a file
             f.write(df.groupby('Account').agg({'PnL': sum}).to_markdown())
@@ -125,7 +126,7 @@ def myfunc()->None:
         page_nm = 'sym_acct_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             f.write(df.groupby(['Symbol','Account'], as_index=False).agg({'Volume': sum, 'PnL': sum}).to_markdown())
-
+        '''
         page_nm = 'acct_sym_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             f.write(df.groupby(['Account','Symbol'], as_index=False).agg({'Volume': sum, 'PnL': sum}).to_markdown())
@@ -133,6 +134,7 @@ def myfunc()->None:
 
     # # Generate HTML tables
     if GENERATE_HTML:
+        '''
         page_nm = 'acct_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:  # Save to a file
             t = df.groupby('Account').agg({'PnL': sum})
@@ -147,7 +149,7 @@ def myfunc()->None:
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby(['Symbol','Account']).agg({'Volume': sum, 'PnL': sum})
             f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
-
+        '''
         page_nm = 'acct_sym_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
             t = df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum})
