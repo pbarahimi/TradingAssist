@@ -103,20 +103,22 @@ def myfunc()->None:
     df['Point Value'] = df['Point Value'].fillna(1)
     df['PnL'] = (df['Volume'] * (df['Current Price']-df['Open Price']) * df['Point Value']).round(2)
 
+    # Get acct/sym level report with entry and current price
+    _t = df.groupby(['Account','Symbol']).agg({'Volume': sum,                                            
+                                            'Volume Weighted Open Price': sum,
+                                            'Current Price': 'mean',
+                                            'PnL': sum,})
+    _t.rename(columns={'Volume Weighted Open Price': 'Open Price'}, inplace=True)
+    cols = ['Open Price', 'Current Price']
+    _t[cols] = _t[cols].round(2)
+        
     if PRINT:
         # # Group by account and symbol to report
         if sys.platform == "win32":
             os.system('cls')
         else:
             os.system('clear')
-        
-        _t = df.groupby(['Account','Symbol']).agg({'Volume': sum,                                            
-                                            'Volume Weighted Open Price': sum,
-                                            'Current Price': 'mean',
-                                            'PnL': sum,})
-        _t.rename(columns={'Volume Weighted Open Price': 'Open Price'}, inplace=True)
-        cols = ['Open Price', 'Current Price']
-        _t[cols] = _t[cols].round(2)
+
         print(_t)
         print('\n', 50 * '-', '\n')
         print(df.groupby('Account').agg({'PnL': sum}))
