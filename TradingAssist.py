@@ -79,6 +79,12 @@ def myfunc()->None:
     #df = gsheet.df[gsheet.df['Is Closed']==0].copy()
     #df = df[df['Is Closed']==0].copy()
 
+    # Add volume weighted entry price
+    total_vol = df.groupby(['Account','Symbol'], as_index=False).agg({'Volume': sum})
+    total_vol.rename(columns={'Volume': 'Total Volume'}, inplace=True)
+    df = pd.merge(df, total_vol, on=['Account','Symbol'])
+    df['Volume Weighted Open Price'] = df['Open Price'] * (df['Volume']/df['Total Volume'])
+
     # # Get Point Values
     # Specify the tab name (optional, defaults to the first sheet)
     SHEET_NAME = 'Symbols'
@@ -103,8 +109,15 @@ def myfunc()->None:
             os.system('cls')
         else:
             os.system('clear')
-
-        print(df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum}))
+        
+        _t = df.groupby(['Account','Symbol']).agg({'Volume': sum,                                            
+                                            'Volume Weighted Open Price': sum,
+                                            'Current Price': 'mean',
+                                            'PnL': sum,})
+        _t.rename(columns={'Volume Weighted Open Price': 'Open Price'}, inplace=True)
+        cols = ['Open Price', 'Current Price']
+        _t[cols] = _t[cols].round(2)
+        print(_t)
         print('\n', 50 * '-', '\n')
         print(df.groupby('Account').agg({'PnL': sum}))
         print('\n', 50 * '-', '\n')
@@ -129,7 +142,7 @@ def myfunc()->None:
         '''
         page_nm = 'acct_sym_lvl_stats.md'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
-            f.write(df.groupby(['Account','Symbol'], as_index=False).agg({'Volume': sum, 'PnL': sum}).to_markdown())
+            f.write(_t.to_markdown())
 
 
     # # Generate HTML tables
@@ -152,8 +165,7 @@ def myfunc()->None:
         '''
         page_nm = 'acct_sym_lvl_stats.html'
         with open(os.path.join(REPORT_PATH, page_nm), 'w') as f:
-            t = df.groupby(['Account','Symbol']).agg({'Volume': sum, 'PnL': sum})
-            f.write(t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
+            f.write(_t.to_html(border=0, justify='left',  table_id='dataTable', classes='table table-striped table-hover'))
 
     return None
 
